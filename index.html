@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Favorite Person ❤️</title>
+    <style>
+        :root {
+            --primary: #ff4d6d;
+            --bg-grad: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-grad);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(255, 77, 109, 0.3);
+            text-align: center;
+            width: 350px;
+            border: 4px solid #ff4d6d;
+            z-index: 10;
+        }
+
+        .main-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 20px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        h1 { color: #d63384; font-size: 1.6rem; }
+        p { color: #444; font-size: 1.1rem; min-height: 50px; }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-next { background: var(--primary); color: white; width: 100%; }
+        .btn-yes { background: #4caf50; color: white; }
+        .btn-no { background: #f44336; color: white; }
+
+        input[type="date"] {
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            margin-bottom: 15px;
+            width: 80%;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Shower animations */
+        .shower-item {
+            position: fixed;
+            top: -10%;
+            z-index: 1;
+            animation: fall linear forwards;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .no-msg-shower {
+            color: #d63384;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(110vh) rotate(15deg); }
+        }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    </style>
+</head>
+<body>
+
+<div id="shower-container"></div>
+
+<div id="login-screen" class="container">
+    <div class="card" id="login-card">
+        <img class="main-img" src="https://i.etsystatic.com/54697506/r/il/2be8e3/6566607239/il_fullxfull.6566607239_8tem.jpg" alt="Bubu Dudu">
+        <h1>Our Secret Date</h1>
+        <p>Select the date when our actual journey started....</p>
+        <input type="date" id="date-input">
+        <button class="btn btn-next" onclick="checkDate()">Unlock ❤️</button>
+        <p id="login-error" style="color:red; display:none;">Wrong date! 👀</p>
+    </div>
+</div>
+
+<div id="main-content" class="hidden">
+    <div class="card">
+        <img id="stage-img" class="main-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEjhAZ26VoM-Ki6cQ3SXYlBrHCAgcd_GQaog&s">
+        <h1 id="stage-title">Valentine's Journey</h1>
+        <p id="stage-desc">Ready for a week of love?</p>
+
+        <div id="step-btn-container">
+            <button class="btn btn-next" onclick="nextStep()">Next Step →</button>
+        </div>
+
+        <div id="final-btns" class="hidden" style="display: flex; justify-content: center; gap: 15px; height: 50px;">
+            <button id="yes-btn" class="btn btn-yes" onclick="sayYes()">YES 💖</button>
+            <button id="no-btn" class="btn btn-no">NO 💔</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const stages = [
+        {
+            title: "Rose Day 🌹",
+            desc: "Starting the week with a rose for the girl who made my life bloom since May 18th!",
+            img: "https://media.tenor.com/LnDAw2bdEogAAAAM/huge-hands.gif"
+        },
+        {
+            title: "Propose Day 💍",
+            desc: "I'd ask you out a million times over, and it would always be a 'Yes' from my side.",
+            img: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxISEBUTExIVFRUVFhYQG" +
+                "RgTFRUWGBYXFxUWGBgYGBgYHSggGxomGxYVITEhJSkrLi8uFyA4ODMsNygtLisBCgoKDg0OGhAQGCsgHyUtLS0tLSstLS0tKy0tLS0tLS0tLS0tLS0tLS0tKy" +
+                "0tLS0tLS0tLS0tLS0tLTctLS0tLf/AABEIAOEA4QMBIgACEQEDEQH/xAAcAAEAAgMBAQEAAAAAAAAAAAAABQYBBAcDAgj/xABJ" +
+                "EAACAQMBBQQHBAYIAwkBAAABAgMABBESBQYTITFBUWGBBxQiMnGRoSNSgrEzQmJyksEVJFNUg7LR8BZjkzVDc4SUorPC0jT/xAAZAQEBAQEBAQAAAAA" +
+                "AAAAAAAAAAQQCAwX/xAAkEQEBAAICAgIDAAMBAAAAAAAAAQIRAyESMQRREzJBIjNhFP/aAAwDAQACEQMRAD8A7jSlKBSlKBSlKBSlKBSlKBSl" +
+                "KBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKDSvNopFLFG2RxdYVuWAUQuQfwqx/Ca0tn7zQT8AwkuLhZXQ404WEgOWDYIwzKvTqwrz3z2C17biJH4biRWD88hTmOUAjoTDJKo8W7OtYsN2xFeTXAf2JIwiR45RFtPGKnufhwnHep76L0ym2ZGnt00qFltJrtgCHwyNbBQrqcFcSvzHXArc3bvXnsreaTGuWCKVtIwNTxqxwD0GTUZsfd6SFbVSyH1exNgSM+032ADAY6Yi+tS+x7Iw2sMLYJjhjhOnOCVQKcZ7OVDptcZdWnUNQAcjIyFJIBx3ZB5+Fa9jtWCZS8M0cihuGWjdXAbl7JKnrzHLxFUvZ27kiyT2bXJcts2O0DIunhRgyxQnGTlz9qxORkjkABUlJu3cSRyM5gjmaSzkVY9bRAWcqyIGJCsS2GBwPZGkc9OSNLarA9Dns5d9QeytuRmWSGWeMSmeVIo2ZFdkQLyVerY9o5rO6mx5LSOSN5BIGlecPgqxaVi8modB7bNjHZio9d2JBdyMODwZbmO/dva42uONFWIDGnRrQPqz0LLp56qCxRbShaVoVljaVAGaMOpdQcYLKDkDmOveKXW0YYiFkljQsQFDuqliTgAAnnk8qr+7e78tvdSvIEdS1w8cplcuBcT8Vk4JTSnPALayW4adByHtvHu1628pOgcSzmslcrqaNpTzYDuxjtHSgm7O/imUtFKkihihMbKwDL1UlTyI7q9o5lYsAwJU6WAIJU4DYPccMpx3EVXbjdtv6wkbpHHPBHGAE5xyxAqjgAgMunhjTyP2Y58+XxuXA6S34kk4jm6VncLpXWbW3JVBzwqjCjJJ5cyTQ0m59rW6SLG88SyMwRUZ1DMxAIUKTknBBx41k7Ug4ph40fFVOKY9a6wn3iuchfGqimxHuNo3zCREj41rHIOFqkZYYYJ1VJdXsAsxz7LeGk863rTdyVbqd2CukhmdJDM+pDMFBXgaNJIxp1lydIAAHOoaT42tb6S3Hi0jSSeIuAHGpMnPLI5jvFZtNq28raI54pG0LLpSRGOhvdfAPunsPSoC03SEdlaW2EcwyQTSlsnivHzd+YJJLcxnw7q9LHdcwNE0ToGW5urhyUxrjundmTkeTKDFg8weEOQ7KdJtdqwGbgiZDLzJjDAsMAE5Ucx1HWsW+1rd5OEk8TSaBLoWRWbQejaQc6eY5+NVrYe6EsE9vK0qNwFeDCqV1pIGaSVjz1TPLw2bPLkccyc+2xN1Xt4bMIY45IHZ5fZLiXigiXByDqzpIJyBpAxiodJ9dr25eRBPEWhwZVEi5iB6axn2fOvgbbtisji4iKxNw5Crq3DfIGlsHk2SBg1UxufP6teQERkywywRSmaQkiR3fBj4YWLm2WILFiAT0AFhsthcC64sJRITbxWpiCHlwWkMZQg4AxK4IIPQeNU6fe6u3FvLZJgCCVUt7EirkqG9kuBrGCOa5HjWJNsSpdRwvCoSZnSNll1Sewhcu8enCxnSRq1EgsgIGrk3RsZrezigmCBoUWAFHLB1RFUOcqNJJBOnnjlzr3t7HF3LMY0GuOJBJqJc6DJlSpX2VGoEYJySeQ7R/UjSlKIzSlKBSlKBSlKBWKzWKBXxNGHUqwyGBUjvBGCK+6UGhsnY8NsGEQb2iCzSSSSu2BgapJGZiAOQBPLsrfpSgzSsUoFKUoPC/skmjMb6tJx7jujAgggq6EMpBAOQa+NmbOit4xFEulQSepYksSWZmYlmYkkliSSTW3WKDXt7GNJJJFXDSlWc5PtFVCL8PZAHKtilKBSlKBSvK5uFjRpHYKiKXZmO" +
+                "AqqMkk9wAr0BzQZpSlApSlApSlBmlKUCvh5VHUgZ6ZIGapvpS3sewtlERAmmJRSeehVA1vjvGV" +
+                "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"
+        },
+        {
+            title: "Chocolate Day 🍫",
+            desc: "You're sweeter than any Ferrero Rocher or Dairy Milk Silk!",
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzh3BuBiB01uZzcIw1Iwz2sr6V7dxenDEe6Q&s"
+        },
+        {
+            title: "Teddy Day 🧸",
+            desc: "I'm your permanent teddy bear. Ready for life-long cuddles?",
+            img: "https://i.etsystatic.com/54697506/r/il/2be8e3/6566607239/il_fullxfull.6566607239_8tem.jpg"
+        },
+        {
+            title: "Promise Day 🤝",
+            desc: "I promise to stay by your side, through every mood and every food craving.",
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2UZZLbl-qwyMlhJvHXK7tnYMyF8nH2239YA&s"
+        },
+        {
+            title: "Hug Day 🤗",
+            desc: "Sending you the warmest, tightest virtual hug right now!",
+            img: "https://i.pinimg.com/736x/9d/92/6c/9d926cf33a8101e204322fde8dd81f41.jpg"
+        },
+        {
+            title: "Kiss Day 💋",
+            desc: "A thousand virtual kisses to the person who owns my heart.",
+            img: "https://i.pinimg.com/originals/3f/a5/8a/3fa58a27358a3cd2a338ec3578d3e777.jpg"
+        },
+        {
+            title: "Valentine's Day ❤️",
+            desc: "And finally... the big question. Will you be my Valentine? Don't try to click no and you can't...😂",
+            img: "https://i.pinimg.com/736x/c4/f1/36/c4f136bbc6c156d311bc6252d97cb386.jpg"
+        }
+    ];
+
+    const noMessages = ["Think again!", "Are you sure?", "Wait!", "Nooooo!", "Please?", "Are you joking?", "Bad decision!", "Why?!", "Try again!"];
+
+    let currentStage = -1;
+
+    function checkDate() {
+        if (document.getElementById('date-input').value === "2023-05-18") {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+            document.getElementById('login-card').style.animation = "shake 0.4s";
+            setTimeout(() => document.getElementById('login-card').style.animation = "", 400);
+        }
+    }
+
+    function nextStep() {
+        currentStage++;
+        if (currentStage < stages.length) {
+            document.getElementById('stage-title').innerText = stages[currentStage].title;
+            document.getElementById('stage-desc').innerText = stages[currentStage].desc;
+            document.getElementById('stage-img').src = stages[currentStage].img;
+            if (currentStage === stages.length - 1) {
+                document.getElementById('step-btn-container').classList.add('hidden');
+                document.getElementById('final-btns').classList.remove('hidden');
+            }
+        }
+    }
+
+    const noBtn = document.getElementById('no-btn');
+    noBtn.addEventListener('mouseover', () => {
+        // Move No Button
+        noBtn.style.position = 'fixed';
+        noBtn.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+        noBtn.style.top = Math.random() * (window.innerHeight - 50) + 'px';
+
+        // Shower of "No" messages
+        spawnNoMessage();
+    });
+
+    function spawnNoMessage() {
+        const msg = document.createElement('div');
+        msg.className = 'shower-item no-msg-shower';
+        msg.innerText = noMessages[Math.floor(Math.random() * noMessages.length)];
+        msg.style.left = Math.random() * 100 + "vw";
+        msg.style.animationDuration = "3s";
+        document.getElementById('shower-container').appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+    }
+
+    function sayYes() {
+        document.getElementById('stage-title').innerText = "YAY! HAPPY VALENTINES! ❤️";
+        document.getElementById('stage-desc').innerText = "Since May 18, 2023, you've been my everything.";
+        document.getElementById('stage-img').src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSi0_ZtJjB5HucgsyUuwBLsziXGlqt7e3Xmaw&s";
+        document.getElementById('final-btns').classList.add('hidden');
+
+        // Final Victory Shower
+        setInterval(() => {
+            const heart = document.createElement('div');
+            heart.className = 'shower-item';
+            heart.innerText = "💖";
+            heart.style.left = Math.random() * 100 + "vw";
+            heart.style.animationDuration = "3s";
+            document.getElementById('shower-container').appendChild(heart);
+            setTimeout(() => heart.remove(), 3000);
+        }, 100);
+    }
+</script>
+</body>
+</html>
